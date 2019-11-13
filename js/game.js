@@ -85,14 +85,21 @@ window.onload = function(){
 		h: 26,
 		x: 50,
 		y: 150,
+
 		frame : 0,
+
+		gravity : 0.25,
+		jump: 4.6,
+		speed : 0,
+
+
 		draw : function() {
 			let bird = this.animation[this.frame]
 			ctx.drawImage(sprite, bird.sX, bird.sY, this.w, this.h, this.x - this.w/2, this.y - this.h/2, this.w, this.h);
 		},
 
 		flap : function() {
-
+			this.speed -= this.jump;
 		},
 
 		update : function() {
@@ -101,7 +108,22 @@ window.onload = function(){
 			// We increment the frame by 1, eath period
 			this.frame += frames%this.period == 0 ? 1:0;
 			// Frames goes from 0 to 4, then again to 0
-			this.frame = this.frame%this.animation.length
+			this.frame = this.frame%this.animation.length;
+
+			if(state.current == state.getReady) {
+
+			} else {
+				this.speed += this.gravity;
+				this.y += this.speed;
+
+				if(this.y + this.h/2 >= cvs.height - fg.h) {
+					// もし、土に鳥が着いたら
+					this.y = cvs.height - fg.h - this.h/2;
+					if(state.current == state.game) {
+						state.current == state.over;
+					}
+				}
+			}
 		}
 	}
 
