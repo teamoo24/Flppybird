@@ -12,6 +12,22 @@ window.onload = function(){
 	const sprite = new Image();
 	sprite.src = "./img/sprite.png"
 
+	// LOAD SOUNDS
+	const SCORE_S = new Audio();
+	SCORE_S.src = "./audio/sfx_point.wav"
+
+	const FLAP = new Audio();
+	FLAP.src = "./audio/sfx_flap.wav"
+
+	const HIT = new Audio();
+	HIT.src = "./audio/sfx_hit.wav"
+
+	const SWOOSHING = new Audio();
+	SWOOSHING.src = "./audio/sfx_swooshing.wav"
+
+	const DIE = new Audio();
+	DIE.src = "./audio/sfx_die.wav"
+
 	// GAME STATE
 	const state = {
 		current : 0,
@@ -19,17 +35,36 @@ window.onload = function(){
 		game : 1,
 		over : 2
 	}
+
+	const startBtn = {
+		x : 120,
+		y : 263,
+		w : 83,
+		h : 29
+	}
 	// CONTROL THE GAME
 	cvs.addEventListener("click", function(evt) {
 		switch (state.current) {
 			case state.getReady:
 				state.current = state.game;
+				SWOOSHING.play();
 				break;
 			case state.game:
 				bird.flap();
+				FLAP.play();
 				break;
 			case state.over:
-				state.current =  state.getReady;
+				let rect = cvs.getBoundingClientRect();
+				let clickX = evt.clientX - rect.left;
+				let clickY = evt.clientY - rect.top;
+
+				if(clickX >= startBtn.x && clickX <= startBtn.x + startBtn.w &&
+					clickY >= startBtn.y && clickY <= startBtn.y + startBtn.h) {
+					pipes.reset();
+					bird.speedReset();
+					score.reset();
+					state.current =  state.getReady;
+				}
 				break;
 		}
 	});
@@ -129,7 +164,6 @@ window.onload = function(){
 
 			if(state.current == state.getReady) {
 				this.y = 150; // Reset Position of the bird after game over
-				this.speed = 0;
 				this.rotation = 0 * DEGREE;
 			} else {
 				this.speed += this.gravity;
@@ -140,6 +174,7 @@ window.onload = function(){
 					this.y = cvs.height - fg.h - this.h/2;
 					if(state.current == state.game) {
 						state.current = state.over;
+						DIE.play();
 					}
 				}
 
@@ -151,7 +186,11 @@ window.onload = function(){
 					this.rotation = -25*DEGREE;
 				}
 			}
-		}
+		},
+
+		speedReset : function(){
+        	this.speed = 0;
+    	}
 	}
 
 	// GET READY MESSAGE
@@ -241,11 +280,13 @@ window.onload = function(){
 				if(bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + this.w &&
 					bird.y + bird.radius > p.y && bird.y - bird.radius < p.y + this.h) {
 					state.current = state.over;
+					HIT.play();
 				}
 				// BOTTOM PIPE
 				if(bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + this.w &&
 					bird.y + bird.radius > bottomPipeYPos && bird.y - bird.radius < bottomPipeYPos + this.h) {
 					state.current = state.over;
+					HIT.play();
 				}
 
 				// MOVE THE PIPE TO THE LEFT
@@ -254,9 +295,49 @@ window.onload = function(){
 				// if the pipes go beyond canvas, we delete them from canvas
 				if(p.x + this.w <= 0) {
 					this.position.shift();
+					score.value += 1;
+					SCORE_S.play()
+					score.best = Math.max(score.value, score.best);
+					localStorage.setItem("best", score.best);
 				}
 			}
+		},
+
+		reset : function() {
+			this.position = [];
 		}
+	}
+
+	// SCORE
+	const score= {
+		best : parseInt(localStorage.getItem("best")) || 0,
+		value : 0,
+
+		draw : function() {
+			ctx.fillStyle = "#fff";
+			ctx.strokeStyle = "#000";
+
+
+			if(state.current == state.game) {
+				ctx.lineWidth = 2;
+				ctx.font = "35px Teko";
+				ctx.fillText(this.value, cvs.width/2, 50);
+				ctx.strokeText(this.value, cvs.width/2, 50);
+
+			} else if(state.current == state.over){
+				// SCORE VALUE
+				ctx.font = "25px Teko"
+				ctx.fillText(this.value, 225, 186);
+				ctx.strokeText(this.value, 225, 186);
+				// BEST VALUE
+				ctx.fillText(this.best, 225, 228);
+				ctx.strokeText(this.best, 225, 228);
+			}
+		},
+
+    	reset : function(){
+        	this.value = 0;
+    	}
 	}
 
 	// draw
@@ -270,6 +351,7 @@ window.onload = function(){
 		bird.draw();
 		getReady.draw();
 		gameover.draw();
+		score.draw()
 	}
 
 	// update
