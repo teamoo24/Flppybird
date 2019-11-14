@@ -95,6 +95,8 @@ window.onload = function(){
 		x: 50,
 		y: 150,
 
+		radius : 12,
+
 		frame : 0,
 
 		gravity : 0.2,
@@ -218,7 +220,7 @@ window.onload = function(){
 		},
 
 		update : function() {
-			if(state.current != state.game) {
+			if(state.current !== state.game) {
 				return;
 			}
 
@@ -231,6 +233,22 @@ window.onload = function(){
 			for(let i = 0; i < this.position.length; i++) {
 				let p = this.position[i];
 
+
+				let bottomPipeYPos = p.y + this.h + this.gap;
+
+				// COLLISION DETECTION
+				// TOP PIPE
+				if(bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + this.w &&
+					bird.y + bird.radius > p.y && bird.y - bird.radius < p.y + this.h) {
+					state.current = state.over;
+				}
+				// BOTTOM PIPE
+				if(bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + this.w &&
+					bird.y + bird.radius > bottomPipeYPos && bird.y - bird.radius < bottomPipeYPos + this.h) {
+					state.current = state.over;
+				}
+
+				// MOVE THE PIPE TO THE LEFT
 				p.x -= this.dx;
 
 				// if the pipes go beyond canvas, we delete them from canvas
